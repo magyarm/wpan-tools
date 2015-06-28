@@ -15,6 +15,206 @@
 #include "nl802154.h"
 #include "iwpan.h"
 
+static int handle_sec_set(struct nl802154_state *state,
+			  struct nl_cb *cb,
+			  struct nl_msg *msg,
+			  int argc, char **argv,
+			  enum id_input id)
+{
+	unsigned long enabled, key_mode, seclevel, frame_counter,
+		      pan_id, short_addr, index, dev_addr_mode;
+	unsigned long long extended_addr;
+	char *end;
+
+	if (argc < 4)
+		return 1;
+
+	/* enabled */
+	enabled = strtoul(argv[0], &end, 0);
+	if (*end != '\0')
+		return 1;
+
+	NLA_PUT_U8(msg, NL802154_ATTR_LLSEC_ENABLED, !!enabled);
+
+	argc--;
+	argv++;
+
+	/* key_mode */
+	key_mode = strtoul(argv[0], &end, 0);
+	if (*end != '\0')
+		return 1;
+
+	NLA_PUT_U8(msg, NL802154_ATTR_LLSEC_KEY_MODE, key_mode);
+
+	argc--;
+	argv++;
+
+	switch (key_mode) {
+	case NL802154_SCF_KEY_IMPLICIT:
+		if (argc < 2)
+			return 1;
+
+		/* pan_id */
+		pan_id = strtoul(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U16(msg, NL802154_ATTR_PAN_ID, pan_id);
+
+		argc--;
+		argv++;
+
+		/* dev_addr_mode */
+		dev_addr_mode = strtoul(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		argc--;
+		argv++;
+
+		switch (dev_addr_mode) {
+		case NL802154_DEV_ADDR_SHORT:
+			if (argc < 1)
+				return 1;
+
+			/* dev_addr_short */
+			short_addr = strtoul(argv[0], &end, 0);
+			if (*end != '\0')
+				return 1;
+
+			NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, short_addr);
+
+			argc--;
+			argv++;
+			break;
+		case NL802154_DEV_ADDR_EXTENDED:
+			if (argc < 1)
+				return 1;
+
+			/* dev_addr_short */
+			extended_addr = strtoul(argv[0], &end, 0);
+			if (*end != '\0')
+				return 1;
+
+			NLA_PUT_U64(msg, NL802154_ATTR_EXTENDED_ADDR,
+				    extended_addr);
+
+			argc--;
+			argv++;
+			break;
+		default:
+			return 1;
+		}
+		break;
+	case NL802154_SCF_KEY_INDEX:
+		if (argc < 1)
+			return 1;
+
+		/* index */
+		index = strtoul(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U8(msg, NL802154_ATTR_LLSEC_KEY_ID, index);
+
+		argc--;
+		argv++;
+		break;
+	case NL802154_SCF_KEY_SHORT_INDEX:
+		if (argc < 2)
+			return 1;
+
+		/* index */
+		index = strtoul(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U8(msg, NL802154_ATTR_LLSEC_KEY_ID, index);
+
+		argc--;
+		argv++;
+
+		/* index */
+		short_addr = strtoul(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U16(msg, NL802154_ATTR_LLSEC_KEY_SOURCE_SHORT,
+			    short_addr);
+
+		argc--;
+		argv++;
+		break;
+	case NL802154_SCF_KEY_EXTENDED_INDEX:
+		if (argc < 2)
+			return 1;
+
+		/* index */
+		index = strtoul(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U8(msg, NL802154_ATTR_LLSEC_KEY_ID, index);
+
+		argc--;
+		argv++;
+
+		/* index */
+		extended_addr = strtoull(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U64(msg, NL802154_ATTR_LLSEC_KEY_SOURCE_EXTENDED,
+			    extended_addr);
+
+		argc--;
+		argv++;
+		break;
+	default:
+		return 1;
+	}
+
+	if (argc < 1)
+		return 1;
+
+	/* seclevel */
+	seclevel = strtoul(argv[0], &end, 0);
+	if (*end != '\0')
+		return 1;
+
+	NLA_PUT_U8(msg, NL802154_ATTR_LLSEC_SECLEVEL, seclevel);
+
+	argc--;
+	argv++;
+
+	/* frame_counter */
+	if (argv[0]) {
+		frame_counter = strtoul(argv[0], &end, 0);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U32(msg, NL802154_ATTR_LLSEC_FRAME_COUNTER, frame_counter);
+	}
+
+	return 0;
+
+nla_put_failure:
+	return -ENOBUFS;
+}
+COMMAND(set, secparams, "<enabled> <out_key <key_mode (1 <dev_addr_mode (2 <pan_id> <short_addr>)|(3 <pan_id> <extended_addr>)>|2 <index>|3 <index> <source_short>|4 <index>> <source_extended)>> <seclevel (0|1|2|3|4|5|6|7)> [frame_counter]",
+	NL802154_CMD_SET_LLSEC_PARAMS, 0, CIB_NETDEV, handle_sec_set, NULL);
+
+static int handle_sec_get(struct nl802154_state *state,
+			  struct nl_cb *cb,
+			  struct nl_msg *msg,
+			  int argc, char **argv,
+			  enum id_input id)
+{
+	return 0;
+}
+COMMAND(get, gecparams, NULL,
+	NL802154_CMD_SET_LLSEC_PARAMS, 0, CIB_NETDEV, handle_sec_get, NULL);
+
 SECTION(key);
 
 static int print_key_handler(struct nl_msg *msg, void *arg)
@@ -124,7 +324,7 @@ COMMAND(keys, dump, NULL, NL802154_CMD_GET_LLSEC_KEY, NLM_F_DUMP, CIB_NONE, hand
 	 "List all network interfaces for wireless hardware.");
 #endif
 
-static int handle_sec_set(struct nl802154_state *state,
+static int handle_key_add(struct nl802154_state *state,
 			  struct nl_cb *cb,
 			  struct nl_msg *msg,
 			  int argc, char **argv,
@@ -153,4 +353,4 @@ nla_put_failure:
 	return -ENOBUFS;
 }
 COMMAND(key, add, "<config_file>", NL802154_CMD_NEW_LLSEC_KEY, 0, CIB_NETDEV,
-	handle_sec_set, NULL);
+	handle_key_add, NULL);
