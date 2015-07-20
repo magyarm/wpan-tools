@@ -52,6 +52,8 @@ enum nl802154_commands {
 
 	NL802154_CMD_SET_LBT_MODE,
 
+	NL802154_CMD_SET_ASSOC_REQUEST,
+
 	/* add new commands above here */
 
 	/* used to define NL802154_CMD_MAX below */
@@ -104,6 +106,8 @@ enum nl802154_attrs {
 
 	NL802154_ATTR_SUPPORTED_COMMANDS,
 
+	NL802154_ATTR_ADDRESS_MODE,
+	NL802154_ATTR_CAPABILITY_INFO,
 	/* add attributes here, update the policy in nl802154.c */
 
 	__NL802154_ATTR_AFTER_LAST,
@@ -241,6 +245,17 @@ enum nl802154_supported_bool_states {
 	/* keep last */
 	__NL802154_SUPPORTED_BOOL_AFTER_LAST,
 	NL802154_SUPPORTED_BOOL_MAX = __NL802154_SUPPORTED_BOOL_AFTER_LAST - 1
+};
+
+/**
+ * enum nl802154_address_modes - address modes for 802.15.4
+ *
+ * @NL802154_ADDR_LONG: indicates address is long type
+ * @NL802154_ADDR_SHORT: indicates address is short type
+ */
+enum nl802154_address_modes {
+	NL802154_ADDR_LONG,
+	NL802154_ADDR_SHORT,
 };
 
 #endif /* __NL802154_H */

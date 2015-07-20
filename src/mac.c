@@ -185,3 +185,76 @@ nla_put_failure:
 }
 COMMAND(set, lbt, "<1|0>",
 	NL802154_CMD_SET_LBT_MODE, 0, CIB_NETDEV, handle_lbt_mode, NULL);
+
+static int handle_set_association_request(struct nl802154_state *state,
+	       struct nl_cb *cb,
+	       struct nl_msg *msg,
+	       int argc, char **argv,
+	       enum id_input id)
+{
+	unsigned long channel;
+	unsigned long page;
+	enum nl802154_address_modes addr_mode;
+	unsigned long pan_id;
+	unsigned long short_addr;
+	unsigned long long extended_addr;
+	unsigned short capability_info;
+	char *end;
+
+	if (argc < 6)
+		return 1;
+
+	/* CHANNEL */
+	channel = strtoul(argv[0], &end, 10);
+		if (*end != '\0')
+			return 1;
+
+	/* PAGE */
+	page = strtoul(argv[1], &end, 10);
+		if (*end != '\0')
+			return 1;
+
+	/* ADDR MODE */
+	addr_mode = strtoul(argv[2], &end, 10);
+		if (*end != '\0')
+			return 1;
+
+	/* PAN ID */
+	pan_id = strtoul(argv[3], &end, 0);
+	if (*end != '\0')
+		return 1;
+
+	/* SHORT ADDR */
+	if ( NL802154_ADDR_SHORT == addr_mode ){
+		short_addr = strtoul(argv[4], &end, 0);
+		if (*end != '\0')
+			return 1;
+	}
+	/* LONG ADDR */
+	else {
+		extended_addr = strtoull(argv[4], &end, 0);
+		if (*end != '\0')
+			return 1;
+	}
+
+	/* CAPABILITY INFO */
+	capability_info = strtoul(argv[5], &end, 0);
+	if (*end != '\0')
+		return 1;
+
+	NLA_PUT_U8(msg, NL802154_ATTR_CHANNEL, channel);
+	NLA_PUT_U8(msg, NL802154_ATTR_PAGE, page);
+	NLA_PUT_U8(msg, NL802154_ATTR_ADDRESS_MODE, addr_mode);
+	NLA_PUT_U16(msg, NL802154_ATTR_PAN_ID, htole16(pan_id));
+	if ( NL802154_ADDR_SHORT == addr_mode ){
+		NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, htole16(short_addr));
+	} else {
+		NLA_PUT_S64(msg, NL802154_ATTR_EXTENDED_ADDR, extended_addr);
+	}
+	NLA_PUT_U8(msg, NL802154_ATTR_CAPABILITY_INFO, capability_info);
+
+	nla_put_failure:
+		return -ENOBUFS;
+}
+COMMAND(set, set_association_request, "<association request>",
+	NL802154_CMD_SET_ASSOC_REQUEST, 0, CIB_NETDEV, handle_set_association_request, NULL);
