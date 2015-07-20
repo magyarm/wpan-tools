@@ -213,6 +213,7 @@ static const char *commands[NL802154_CMD_MAX + 1] = {
 	[NL802154_CMD_SET_MAX_CSMA_BACKOFFS] = "set_max_csma_backoffs",
 	[NL802154_CMD_SET_LBT_MODE] = "set_lbt_mode",
 	[NL802154_CMD_SET_ASSOC_REQUEST] = "set_assoc_request",
+	[NL802154_CMD_GET_ASSOC_CONFIRM] = "get_assoc_confirm",
 };
 
 static char cmdbuf[100];

@@ -199,7 +199,17 @@ static int handle_set_association_request(struct nl802154_state *state,
 	unsigned long short_addr;
 	unsigned long long extended_addr;
 	unsigned short capability_info;
+
+	// Do the same security information like GET ED SCAN
+	unsigned long security_level = 0;
+	unsigned long key_id_mode = 0;
+	char key_source[4 + 1];
+	unsigned long key_index = 0;
+
 	char *end;
+
+	memset( key_source, 0xff, 4 );
+	key_source[ 4 ] = '\0';
 
 	if (argc < 6)
 		return 1;
@@ -252,9 +262,56 @@ static int handle_set_association_request(struct nl802154_state *state,
 		NLA_PUT_S64(msg, NL802154_ATTR_EXTENDED_ADDR, extended_addr);
 	}
 	NLA_PUT_U8(msg, NL802154_ATTR_CAPABILITY_INFO, capability_info);
+	NLA_PUT_U8(msg, NL802154_ATTR_SECURITY_LEVEL, security_level);
+	NLA_PUT_U8(msg, NL802154_ATTR_KEY_ID_MODE, key_id_mode);
+	NLA_PUT_STRING(msg, NL802154_ATTR_KEY_SOURCE, key_source);
+	NLA_PUT_U8(msg, NL802154_ATTR_KEY_INDEX, key_index);
 
 	nla_put_failure:
 		return -ENOBUFS;
 }
 COMMAND(set, set_association_request, "<association request>",
 	NL802154_CMD_SET_ASSOC_REQUEST, 0, CIB_NETDEV, handle_set_association_request, NULL);
+
+static int handle_get_association_confirm(struct nl802154_state *state,
+	       struct nl_cb *cb,
+	       struct nl_msg *msg,
+	       int argc, char **argv,
+	       enum id_input id)
+{
+	unsigned long assoc_short_addr;
+	unsigned long status;
+
+	// Do the same security information like GET ED SCAN
+	unsigned long security_level = 0;
+	unsigned long key_id_mode = 0;
+	char key_source[4 + 1];
+	unsigned long key_index = 0;
+
+	char *end;
+
+	if (argc < 2)
+		return 1;
+
+	/* ASSOCIATED SHORT ADDRESS */
+	assoc_short_addr = strtol(argv[0], &end, 0);
+	if (*end != '\0')
+		return 1;
+
+	/* CONFIRM STATUS */
+	status = strtol(argv[1], &end, 0);
+	if (*end != '\0')
+		return 1;
+
+	NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, assoc_short_addr);
+	NLA_PUT_U8(msg, NL802154_ATTR_CONFIRM_STATUS, status);
+	NLA_PUT_U8(msg, NL802154_ATTR_SECURITY_LEVEL, security_level);
+	NLA_PUT_U8(msg, NL802154_ATTR_KEY_ID_MODE, key_id_mode);
+	NLA_PUT_STRING(msg, NL802154_ATTR_KEY_SOURCE, key_source);
+	NLA_PUT_U8(msg, NL802154_ATTR_KEY_INDEX, key_index);
+
+	nla_put_failure:
+		return -ENOBUFS;
+}
+COMMAND(get, get_association_request, "<association confirm>",
+	NL802154_CMD_GET_ASSOC_CONFIRM, 0, CIB_NETDEV, handle_get_association_confirm, NULL);
