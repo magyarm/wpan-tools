@@ -186,71 +186,126 @@ nla_put_failure:
 COMMAND(set, lbt, "<1|0>",
 	NL802154_CMD_SET_LBT_MODE, 0, CIB_NETDEV, handle_lbt_mode, NULL);
 
+static int print_association_confirm_handler(struct nl_msg *msg, void *arg)
+{
+	int r;
+
+	uint16_t assoc_short_addr;
+	uint8_t status;
+
+	struct genlmsghdr *gnlh;
+	struct nlattr *tb[ NL802154_ATTR_MAX + 1 ];
+	int i;
+
+	printf( "in %s\n", __FUNCTION__ );
+	int i,j;
+
+	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
+	if ( NULL ==  gnlh ) {
+		fprintf( stderr, "gnlh was null\n" );
+		goto protocol_error;
+	}
+
+	r = nla_parse( tb, NL802154_ATTR_MAX, genlmsg_attrdata( gnlh, 0 ),
+	genlmsg_attrlen( gnlh, 0 ), NULL );
+	if ( 0 != r ) {
+	fprintf( stderr, "nla_parse\n" );
+	goto protocol_error;
+	}
+
+	if ( ! (
+		tb[ NL802154_ATTR_SHORT_ADDR ] &&
+		tb[ NL802154_ATTR_CONFIRM_STATUS ]
+	) ){
+		r = -EINVAL;
+		goto out;
+	}
+
+	assoc_short_addr = nla_get_u16( tb[ NL802154_ATTR_SHORT_ADDR ] );
+	status = nla_get_u8( tb[ NL802154_ATTR_CONFIRM_STATUS ] );
+
+	printf(
+		"associated short address: %u, "
+		"confirm status: %u, ",
+		assoc_short_addr,
+		status
+	);
+
+protocol_error:
+	fprintf( stderr, "protocol error\n" );
+	r = -EINVAL;
+
+out:
+	printf( "returning %d\n", r );
+	return r;
+}
+
 static int handle_set_association_request(struct nl802154_state *state,
 	       struct nl_cb *cb,
 	       struct nl_msg *msg,
 	       int argc, char **argv,
 	       enum id_input id)
 {
-	unsigned long channel;
-	unsigned long page;
+	int r;
+
+	uint8_t channel;
+	uint8_t page;
 	enum nl802154_address_modes addr_mode;
-	unsigned long pan_id;
-	unsigned long short_addr;
-	unsigned long long extended_addr;
-	unsigned short capability_info;
-
-	// Do the same security information like GET ED SCAN
-	unsigned long security_level = 0;
-	unsigned long key_id_mode = 0;
-	char key_source[4 + 1];
-	unsigned long key_index = 0;
-
-	char *end;
-
-	memset( key_source, 0xff, 4 );
-	key_source[ 4 ] = '\0';
-
-	if (argc < 6)
-		return 1;
+	uint16_t pan_id;
+	uint16_t short_addr;
+	uint64_t extended_addr;
+	uint8_t capability_info;
 
 	/* CHANNEL */
-	channel = strtoul(argv[0], &end, 10);
-		if (*end != '\0')
-			return 1;
-
+	if ( argc >= 1 ){
+		if ( 1 != sscanf( argv[ 0 ], "%u", &channel ) ) {
+			goto invalid_arg;
+		}
+	}
 	/* PAGE */
-	page = strtoul(argv[1], &end, 10);
-		if (*end != '\0')
-			return 1;
-
+	if ( argc >= 2 ){
+		if ( 1 != sscanf( argv[ 1 ], "%u", &page ) ) {
+			goto invalid_arg;
+		}
+	}
 	/* ADDR MODE */
-	addr_mode = strtoul(argv[2], &end, 10);
-		if (*end != '\0')
-			return 1;
-
+	if ( argc >= 3 ){
+		if ( 1 != sscanf( argv[ 2 ], "%u", &addr_mode ) ) {
+			goto invalid_arg;
+		}
+	}
 	/* PAN ID */
-	pan_id = strtoul(argv[3], &end, 0);
-	if (*end != '\0')
-		return 1;
-
+	if ( argc >= 4 ){
+		if ( 1 != sscanf( argv[ 3 ], "%u", &pan_id ) ) {
+			goto invalid_arg;
+		}
+	}
 	/* SHORT ADDR */
 	if ( NL802154_ADDR_SHORT == addr_mode ){
-		short_addr = strtoul(argv[4], &end, 0);
-		if (*end != '\0')
-			return 1;
+		if ( argc >= 5 ){
+			if ( 1 != sscanf( argv[ 4 ], "%u", &short_addr ) ) {
+				goto invalid_arg;
+			}
+		}
 	}
 	/* LONG ADDR */
 	else {
-		extended_addr = strtoull(argv[4], &end, 0);
-		if (*end != '\0')
-			return 1;
+		if ( argc >= 5 ){
+			if ( 1 != sscanf( argv[ 4 ], "%u", &extended_addr ) ) {
+				goto invalid_arg;
+			}
+		}
 	}
 
 	/* CAPABILITY INFO */
-	capability_info = strtoul(argv[5], &end, 0);
-	if (*end != '\0')
-		return 1;
+	if ( argc == 6 ){
+		if ( 1 != sscanf( argv[ 5 ], "%u", &capability_info ) ) {
+			goto invalid_arg;
+		}
+	}
+	if ( 0 != r ){
+		goto out;
+	}
 
 	NLA_PUT_U8(msg, NL802154_ATTR_CHANNEL, channel);
 	NLA_PUT_U8(msg, NL802154_ATTR_PAGE, page);
@@ -262,13 +317,15 @@ static int handle_set_association_request(struct nl802154_state *state,
 		NLA_PUT_S64(msg, NL802154_ATTR_EXTENDED_ADDR, extended_addr);
 	}
 	NLA_PUT_U8(msg, NL802154_ATTR_CAPABILITY_INFO, capability_info);
-	NLA_PUT_U8(msg, NL802154_ATTR_SECURITY_LEVEL, security_level);
-	NLA_PUT_U8(msg, NL802154_ATTR_KEY_ID_MODE, key_id_mode);
-	NLA_PUT_STRING(msg, NL802154_ATTR_KEY_SOURCE, key_source);
-	NLA_PUT_U8(msg, NL802154_ATTR_KEY_INDEX, key_index);
 
-	nla_put_failure:
-		return -ENOBUFS;
+nla_put_failure:
+	r = -ENOBUFS;
+
+out:
+	return r;
+invalid_arg:
+	r = 1;
+	goto out;
 }
 COMMAND(set, set_association_request, "<association request>",
 	NL802154_CMD_SET_ASSOC_REQUEST, 0, CIB_NETDEV, handle_set_association_request, NULL);
@@ -279,39 +336,41 @@ static int handle_get_association_confirm(struct nl802154_state *state,
 	       int argc, char **argv,
 	       enum id_input id)
 {
-	unsigned long assoc_short_addr;
-	unsigned long status;
+	int r;
 
-	// Do the same security information like GET ED SCAN
-	unsigned long security_level = 0;
-	unsigned long key_id_mode = 0;
-	char key_source[4 + 1];
-	unsigned long key_index = 0;
-
-	char *end;
-
-	if (argc < 2)
-		return 1;
+	uint16_t assoc_short_addr;
+	uint8_t status;
 
 	/* ASSOCIATED SHORT ADDRESS */
-	assoc_short_addr = strtol(argv[0], &end, 0);
-	if (*end != '\0')
-		return 1;
+	if ( argc >= 1 ){
+		if ( 1 != sscanf( argv[0], "%u", &assoc_short_addr)){
+			goto invalid_arg;
+		}
+	}
 
 	/* CONFIRM STATUS */
-	status = strtol(argv[1], &end, 0);
-	if (*end != '\0')
-		return 1;
+	if ( argc == 2 ){
+		if ( 1 != sscanf( argv[1], "%u", &status)){
+			goto invalid_arg;
+		}
+	}
 
 	NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, assoc_short_addr);
 	NLA_PUT_U8(msg, NL802154_ATTR_CONFIRM_STATUS, status);
-	NLA_PUT_U8(msg, NL802154_ATTR_SECURITY_LEVEL, security_level);
-	NLA_PUT_U8(msg, NL802154_ATTR_KEY_ID_MODE, key_id_mode);
-	NLA_PUT_STRING(msg, NL802154_ATTR_KEY_SOURCE, key_source);
-	NLA_PUT_U8(msg, NL802154_ATTR_KEY_INDEX, key_index);
+	//r = something with print callback
 
-	nla_put_failure:
-		return -ENOBUFS;
+	if ( 0 != r ){
+		goto out;
+	}
+
+nla_put_failure:
+	r = -ENOBUFS;
+
+out:
+	return r;
+invalid_arg:
+	r = 1;
+	goto out;
 }
 COMMAND(get, get_association_request, "<association confirm>",
 	NL802154_CMD_GET_ASSOC_CONFIRM, 0, CIB_NETDEV, handle_get_association_confirm, NULL);
