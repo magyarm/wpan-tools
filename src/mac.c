@@ -252,8 +252,7 @@ static int handle_set_association_request(struct nl802154_state *state,
 	uint8_t coord_page;
 	enum nl802154_address_modes addr_mode;
 	uint16_t coord_pan_id;
-	uint16_t coord_short_addr;
-	uint64_t coord_extended_addr;
+	uint64_t coord_addr;
 	uint8_t capability_info;
 
 	/* CHANNEL */
@@ -280,20 +279,10 @@ static int handle_set_association_request(struct nl802154_state *state,
 			goto invalid_arg;
 		}
 	}
-	/* SHORT ADDR */
-	if ( NL802154_ADDR_SHORT == addr_mode ){
-		if ( argc >= 5 ){
-			if ( 1 != sscanf( argv[ 4 ], "%u", &coord_short_addr ) ) {
-				goto invalid_arg;
-			}
-		}
-	}
-	/* LONG ADDR */
-	else {
-		if ( argc >= 5 ){
-			if ( 1 != sscanf( argv[ 4 ], "%u", &coord_extended_addr ) ) {
-				goto invalid_arg;
-			}
+	/* ADDRESS */
+	if ( argc >= 5 ){
+		if ( 1 != sscanf( argv[ 4 ], "%u", &coord_addr ) ) {
+			goto invalid_arg;
 		}
 	}
 
@@ -312,9 +301,9 @@ static int handle_set_association_request(struct nl802154_state *state,
 	NLA_PUT_U8(msg, NL802154_ATTR_ADDRESS_MODE, addr_mode);
 	NLA_PUT_U16(msg, NL802154_ATTR_PAN_ID, htole16(coord_pan_id));
 	if ( NL802154_ADDR_SHORT == addr_mode ){
-		NLA_PUT_U16(msg, NL802154_ATTR_COORD_SHORT_ADDR, htole16(coord_short_addr));
+		NLA_PUT_U16(msg, NL802154_ATTR_COORD_SHORT_ADDR, htole16(coord_addr));
 	} else {
-		NLA_PUT_S64(msg, NL802154_ATTR_COORD_EXT_ADDR, coord_extended_addr);
+		NLA_PUT_S64(msg, NL802154_ATTR_COORD_EXT_ADDR, coord_addr);
 	}
 	NLA_PUT_U8(msg, NL802154_ATTR_CAPABILITY_INFO, capability_info);
 
