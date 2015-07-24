@@ -338,3 +338,51 @@ invalid_arg:
 
 COMMAND(get, ed_scan, "[<page> [<channels> [<duration>]]]",
     NL802154_CMD_ED_SCAN_REQ, 0, CIB_PHY, handle_ed_scan, NULL);
+
+
+static int print_beacon_notify_indication(struct nl_msg *msg, void *arg)
+{
+	struct genlmsghdr *gnlh;
+	struct nlattr *tb_msg[NL802154_ATTR_MAX + 1];
+	unsigned int *wpan_phy = arg;
+	int r;
+
+	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
+	if ( NULL ==  gnlh ) {
+	    fprintf( stderr, "gnlh was null\n" );
+	    goto protocol_error;
+	}
+
+	r = nla_parse( tb_msg, NL802154_ATTR_MAX, genlmsg_attrdata( gnlh, 0 ),
+	      genlmsg_attrlen( gnlh, 0 ), NULL );
+	if ( 0 != r ) {
+	    fprintf( stderr, "nla_parse\n" );
+	    goto protocol_error;
+	}
+
+        printf("beacon_indication:\n");
+	if (tb_msg[NL802154_ATTR_BEACON_SEQUENCE_NUMBER]) {
+		printf("\tBSN: %d\n", nla_get_u32(tb_msg[NL802154_ATTR_BEACON_SEQUENCE_NUMBER]));
+	}
+
+	goto out;
+
+protocol_error:
+    fprintf( stderr, "protocol error\n" );
+    r = -EINVAL;
+out:
+    return NL_SKIP;
+}
+
+static int handle_beacon_notify(struct nl802154_state *state,
+				 struct nl_cb *cb,
+				 struct nl_msg *msg,
+				 int argc, char **argv,
+				 enum id_input id)
+{
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_beacon_notify_indication, NULL);
+	return 0;
+}
+
+COMMAND(set, ed_scan, "<none>",
+    NL802154_CMD_SET_BEACON_NOTIFY, 0, CIB_PHY, handle_beacon_notify, NULL);
