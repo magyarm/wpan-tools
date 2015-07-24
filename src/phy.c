@@ -384,5 +384,5 @@ static int handle_beacon_notify(struct nl802154_state *state,
 	return 0;
 }
 
-COMMAND(set, ed_scan, "<none>",
+COMMAND(set, beacon_notify, "<none>",
     NL802154_CMD_SET_BEACON_NOTIFY, 0, CIB_PHY, handle_beacon_notify, NULL);
