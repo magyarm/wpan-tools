@@ -13,6 +13,20 @@
 #include "nl802154.h"
 #include "iwpan.h"
 
+/**
+ * enum nl802154_address_modes - address modes for 802.15.4
+ *
+ * Found in TABLE 54 of the 2011 802.15.4 spec
+ *
+ * @NL802154_ADDR_LONG: indicates address is long type
+ * @NL802154_ADDR_SHORT: indicates address is short type
+ */
+enum nl802154_address_modes {
+	NL802154_NO_ADDRESS = 0x00,
+	NL802154_ADDR_SHORT = 0x02,
+	NL802154_ADDR_LONG = 0x03,
+};
+
 static int handle_pan_id_set(struct nl802154_state *state,
 			     struct nl_cb *cb,
 			     struct nl_msg *msg,
@@ -197,7 +211,6 @@ static int print_association_confirm_handler(struct nl_msg *msg, void *arg)
 	struct nlattr *tb[ NL802154_ATTR_MAX + 1 ];
 	int i;
 
-	printf( "in %s\n", __FUNCTION__ );
 	int i,j;
 
 	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
@@ -255,38 +268,32 @@ static int handle_set_association_request(struct nl802154_state *state,
 	uint64_t coord_addr;
 	uint8_t capability_info;
 
-	/* CHANNEL */
 	if ( argc >= 1 ){
 		if ( 1 != sscanf( argv[ 0 ], "%u", &coord_channel ) ) {
 			goto invalid_arg;
 		}
 	}
-	/* PAGE */
 	if ( argc >= 2 ){
 		if ( 1 != sscanf( argv[ 1 ], "%u", &coord_page ) ) {
 			goto invalid_arg;
 		}
 	}
-	/* ADDR MODE */
 	if ( argc >= 3 ){
 		if ( 1 != sscanf( argv[ 2 ], "%u", &addr_mode ) ) {
 			goto invalid_arg;
 		}
 	}
-	/* PAN ID */
 	if ( argc >= 4 ){
 		if ( 1 != sscanf( argv[ 3 ], "%u", &coord_pan_id ) ) {
 			goto invalid_arg;
 		}
 	}
-	/* ADDRESS */
 	if ( argc >= 5 ){
 		if ( 1 != sscanf( argv[ 4 ], "%u", &coord_addr ) ) {
 			goto invalid_arg;
 		}
 	}
 
-	/* CAPABILITY INFO */
 	if ( argc == 6 ){
 		if ( 1 != sscanf( argv[ 5 ], "%u", &capability_info ) ) {
 			goto invalid_arg;
@@ -301,9 +308,9 @@ static int handle_set_association_request(struct nl802154_state *state,
 	NLA_PUT_U8(msg, NL802154_ATTR_ADDRESS_MODE, addr_mode);
 	NLA_PUT_U16(msg, NL802154_ATTR_PAN_ID, htole16(coord_pan_id));
 	if ( NL802154_ADDR_SHORT == addr_mode ){
-		NLA_PUT_U16(msg, NL802154_ATTR_COORD_SHORT_ADDR, htole16(coord_addr));
+		NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, htole16(coord_addr));
 	} else {
-		NLA_PUT_S64(msg, NL802154_ATTR_COORD_EXT_ADDR, coord_addr);
+		NLA_PUT_S64(msg, NL802154_ATTR_EXTENDED_ADDR, coord_addr);
 	}
 	NLA_PUT_U8(msg, NL802154_ATTR_CAPABILITY_INFO, capability_info);
 
@@ -317,7 +324,7 @@ invalid_arg:
 	goto out;
 }
 COMMAND(set, set_association_request, "<association request>",
-	NL802154_CMD_SET_ASSOC_REQUEST, 0, CIB_NETDEV, handle_set_association_request, NULL);
+	NL802154_CMD_SET_ASSOC_REQ, 0, CIB_NETDEV, handle_set_association_request, NULL);
 
 static int handle_get_association_confirm(struct nl802154_state *state,
 	       struct nl_cb *cb,
@@ -330,14 +337,12 @@ static int handle_get_association_confirm(struct nl802154_state *state,
 	uint16_t assoc_short_addr;
 	uint8_t status;
 
-	/* ASSOCIATED SHORT ADDRESS */
 	if ( argc >= 1 ){
 		if ( 1 != sscanf( argv[0], "%u", &assoc_short_addr)){
 			goto invalid_arg;
 		}
 	}
 
-	/* CONFIRM STATUS */
 	if ( argc == 2 ){
 		if ( 1 != sscanf( argv[1], "%u", &status)){
 			goto invalid_arg;
@@ -346,7 +351,6 @@ static int handle_get_association_confirm(struct nl802154_state *state,
 
 	NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, assoc_short_addr);
 	NLA_PUT_U8(msg, NL802154_ATTR_CONFIRM_STATUS, status);
-	//r = something with print callback
 
 	if ( 0 != r ){
 		goto out;
@@ -362,4 +366,4 @@ invalid_arg:
 	goto out;
 }
 COMMAND(get, get_association_request, "<association confirm>",
-	NL802154_CMD_GET_ASSOC_CONFIRM, 0, CIB_NETDEV, handle_get_association_confirm, NULL);
+	NL802154_CMD_GET_ASSOC_CNF, 0, CIB_NETDEV, handle_get_association_confirm, NULL);
