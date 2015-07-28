@@ -253,7 +253,7 @@ out:
 	return r;
 }
 
-static int handle_set_association_request(struct nl802154_state *state,
+static int handle_association_request(struct nl802154_state *state,
 	       struct nl_cb *cb,
 	       struct nl_msg *msg,
 	       int argc, char **argv,
@@ -324,9 +324,9 @@ invalid_arg:
 	goto out;
 }
 COMMAND(set, set_association_request, "<association request>",
-	NL802154_CMD_SET_ASSOC_REQ, 0, CIB_NETDEV, handle_set_association_request, NULL);
+	NL802154_CMD_ASSOC_REQ, 0, CIB_NETDEV, handle_association_request, NULL);
 
-static int handle_get_association_confirm(struct nl802154_state *state,
+static int handle_association_confirm(struct nl802154_state *state,
 	       struct nl_cb *cb,
 	       struct nl_msg *msg,
 	       int argc, char **argv,
@@ -366,4 +366,4 @@ invalid_arg:
 	goto out;
 }
 COMMAND(get, get_association_request, "<association confirm>",
-	NL802154_CMD_GET_ASSOC_CNF, 0, CIB_NETDEV, handle_get_association_confirm, NULL);
+	NL802154_CMD_ASSOC_CNF, 0, CIB_NETDEV, handle_association_confirm, NULL);
