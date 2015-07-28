@@ -2,6 +2,8 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
@@ -14,10 +16,10 @@
 #include "iwpan.h"
 
 static int handle_pan_id_set(struct nl802154_state *state,
-			     struct nl_cb *cb,
-			     struct nl_msg *msg,
-			     int argc, char **argv,
-			     enum id_input id)
+                            struct nl_cb *cb,
+                            struct nl_msg *msg,
+                            int argc, char **argv,
+                            enum id_input id)
 {
 	unsigned long pan_id;
 	char *end;
@@ -131,10 +133,10 @@ COMMAND(set, backoff_exponents, "<min_be> <max_be>",
 	handle_backoff_exponent, NULL);
 
 static int handle_max_csma_backoffs(struct nl802154_state *state,
-				    struct nl_cb *cb,
-				    struct nl_msg *msg,
-				    int argc, char **argv,
-				    enum id_input id)
+					struct nl_cb *cb,
+					struct nl_msg *msg,
+					int argc, char **argv,
+					enum id_input id)
 {
 	unsigned long backoffs;
 	char *end;
@@ -185,3 +187,163 @@ nla_put_failure:
 }
 COMMAND(set, lbt, "<1|0>",
 	NL802154_CMD_SET_LBT_MODE, 0, CIB_NETDEV, handle_lbt_mode, NULL);
+
+struct assoc_req {
+	uint32_t channel_number;
+	uint32_t channel_page;
+	uint32_t coord_pan_id;
+	uint64_t coord_address;
+	uint32_t capability_information;
+};
+
+static inline bool is_extended_address( uint64_t addr ) {
+	static const uint64_t mask = ~((1 << 16) - 1);
+	return mask & addr;
+}
+
+static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
+{
+	int r;
+
+	uint16_t assoc_short_address;
+	uint8_t status;
+
+	struct genlmsghdr *gnlh;
+	struct nlattr *tb[ NL802154_ATTR_MAX + 1 ];
+	int i,j;
+
+	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
+	if ( NULL ==  gnlh ) {
+		fprintf( stderr, "gnlh was null\n" );
+		goto protocol_error;
+	}
+
+	r = nla_parse( tb, NL802154_ATTR_MAX, genlmsg_attrdata( gnlh, 0 ),
+		  genlmsg_attrlen( gnlh, 0 ), NULL );
+	if ( 0 != r ) {
+		fprintf( stderr, "nla_parse\n" );
+		goto protocol_error;
+	}
+
+	if ( ! (
+		tb[ NL802154_ATTR_SHORT_ADDR ] &&
+		tb[ NL802154_ATTR_ASSOC_STATUS ]
+	) ) {
+		r = -EINVAL;
+		goto out;
+	}
+
+	assoc_short_address = nla_get_u16( tb[ NL802154_ATTR_SHORT_ADDR ] );
+	status = nla_get_u8( tb[ NL802154_ATTR_ASSOC_STATUS ] );
+
+	printf(
+		"short_address: 0x%04x, "
+		"status: %u",
+		assoc_short_address,
+		status
+	);
+
+	r = 0;
+	goto out;
+
+protocol_error:
+	fprintf( stderr, "protocol error\n" );
+	r = -EINVAL;
+
+out:
+	return r;
+}
+
+static int handle_assoc_req(struct nl802154_state *state,
+		struct nl_cb *cb,
+		struct nl_msg *msg,
+		int argc,
+		char **argv,
+		enum id_input id)
+{
+	static const char *hex_prefix = "0x";
+	enum nl802154_address_modes {
+		NL802154_ADDR_NONE,
+		NL802154_ADDR_INVAL,
+		NL802154_ADDR_SHORT,
+		NL802154_ADDR_EXT,
+	};
+
+	int r;
+
+	int i;
+
+	static struct assoc_req req;
+
+	printf( "argc == %d\n", argc );
+
+	if (
+		! (
+			5 == argc &&
+			1 == sscanf( argv[ 0 ], "%u", &req.channel_number ) &&
+			1 == sscanf( argv[ 1 ], "%u", &req.channel_page ) &&
+			(
+				1 == sscanf( argv[ 2 ], "%u", &req.coord_pan_id ) ||
+				(
+					!(
+						0 == strncmp( hex_prefix, argv[ 2 ], strlen( hex_prefix ) ) &&
+						1 == sscanf( argv[ 2 ] + strlen( hex_prefix ), "%x", &req.coord_pan_id )
+					)
+				)
+			) &&
+			(
+				1 == sscanf( argv[ 3 ], PRId64 , &req.coord_address ) ||
+				(
+					!(
+						0 == strncmp( hex_prefix, argv[ 3 ], strlen( hex_prefix ) ) &&
+						1 == sscanf( argv[ 3 ] + strlen( hex_prefix ), PRIx64, &req.coord_address )
+					)
+				)
+			) &&
+			(
+				1 == sscanf( argv[ 4 ], "%u" , &req.capability_information ) ||
+				(
+					!(
+						0 == strncmp( hex_prefix, argv[ 4 ], strlen( hex_prefix ) ) &&
+						1 == sscanf( argv[ 4 ] + strlen( hex_prefix ), "%x", &req.capability_information )
+					)
+				)
+			)
+		)
+	) {
+		goto invalid_arg;
+	}
+
+	NLA_PUT_U8(msg, NL802154_ATTR_CHANNEL, req.channel_number);
+	NLA_PUT_U8(msg, NL802154_ATTR_PAGE, req.channel_page);
+	NLA_PUT_U32(msg, NL802154_ATTR_PAN_ID, req.coord_pan_id );
+
+	if ( is_extended_address( req.coord_address ) ) {
+		NLA_PUT_U8(msg, NL802154_ATTR_ADDR_MODE, NL802154_ADDR_EXT );
+		NLA_PUT_U64(msg, NL802154_ATTR_EXTENDED_ADDR, req.coord_address );
+	} else {
+		NLA_PUT_U8(msg, NL802154_ATTR_ADDR_MODE, NL802154_ADDR_SHORT );
+		NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, req.coord_address );
+	}
+
+	NLA_PUT_U8(msg, NL802154_ATTR_ASSOC_CAP_INFO, req.capability_information);
+
+	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_assoc_cnf_handler, &req );
+	if ( 0 != r ) {
+		goto out;
+	}
+
+	r = 0;
+	goto out;
+
+nla_put_failure:
+	r = -ENOBUFS;
+out:
+	return r;
+invalid_arg:
+	r = 1;
+	goto out;
+}
+
+COMMAND(set, assoc, "<channel> <page> <coord_panid> <coord_addr> <cap_info>",
+	NL802154_CMD_ASSOC_REQ, 0, CIB_PHY, handle_assoc_req, NULL);

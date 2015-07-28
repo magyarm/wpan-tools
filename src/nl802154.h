@@ -55,6 +55,9 @@ enum nl802154_commands {
 	NL802154_CMD_ED_SCAN_REQ,
 	NL802154_CMD_ED_SCAN_CNF,
 
+	NL802154_CMD_ASSOC_REQ,
+	NL802154_CMD_ASSOC_CNF,
+
 	/* add new commands above here */
 
 	/* used to define NL802154_CMD_MAX below */
@@ -120,6 +123,11 @@ enum nl802154_attrs {
     NL802154_ATTR_SEC_KEY_SOURCE,
     NL802154_ATTR_SEC_KEY_SOURCE_ENTRY,
     NL802154_ATTR_SEC_KEY_INDEX,
+
+	NL802154_ATTR_ADDR_MODE,
+
+	NL802154_ATTR_ASSOC_CAP_INFO,
+	NL802154_ATTR_ASSOC_STATUS,
 
 	/* add attributes here, update the policy in nl802154.c */
 
