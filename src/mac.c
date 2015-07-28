@@ -256,7 +256,7 @@ static int handle_association_request(struct nl802154_state *state,
 	       int argc, char **argv,
 	       enum id_input id)
 {
-	int r;
+	int r = 0;
 
 	uint8_t coord_channel = 17;
 	uint8_t coord_page = 0;
@@ -292,7 +292,7 @@ static int handle_association_request(struct nl802154_state *state,
 	NLA_PUT_U8(msg, NL802154_ATTR_CAPABILITY_INFO, capability_info);
 
 	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_association_confirm_handler, NULL );
-    if ( 0 != r ) {
+	if ( 0 != r ) {
         goto out;
     }
 
@@ -307,7 +307,7 @@ invalid_arg:
 	r = 1;
 	goto out;
 }
-COMMAND(set, assoc_req, "<association request>",
+COMMAND(set, assoc_req, "<coord_pan_id> <coord_short_addr>",
 	NL802154_CMD_ASSOC_REQ, 0, CIB_NETDEV, handle_association_request, NULL);
 
 static int handle_association_confirm(struct nl802154_state *state,
@@ -316,7 +316,7 @@ static int handle_association_confirm(struct nl802154_state *state,
 	       int argc, char **argv,
 	       enum id_input id)
 {
-	int r;
+	int r = 0;
 
 	uint16_t assoc_short_addr;
 	uint8_t status;
@@ -349,5 +349,5 @@ invalid_arg:
 	r = 1;
 	goto out;
 }
-COMMAND(get, assoc_cnf, "<association confirm>",
+COMMAND(get, assoc_cnf, "<assoc_short_addr> <status>",
 	NL802154_CMD_ASSOC_CNF, 0, CIB_NETDEV, handle_association_confirm, NULL);
