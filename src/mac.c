@@ -258,44 +258,24 @@ static int handle_association_request(struct nl802154_state *state,
 {
 	int r;
 
-	uint8_t coord_channel;
-	uint8_t coord_page;
-	enum nl802154_address_modes addr_mode;
+	uint8_t coord_channel = 17;
+	uint8_t coord_page = 0;
+	enum nl802154_address_modes addr_mode = NL802154_ADDR_SHORT;
 	uint16_t coord_pan_id;
-	uint64_t coord_addr;
-	uint8_t capability_info;
+	uint16_t coord_addr;
+	uint8_t capability_info = 42;
 
 	if ( argc >= 1 ){
-		if ( 1 != sscanf( argv[ 0 ], "%u", &coord_channel ) ) {
+		if ( 1 != sscanf( argv[ 0 ], "%u", &coord_pan_id ) ) {
 			goto invalid_arg;
 		}
 	}
-	if ( argc >= 2 ){
-		if ( 1 != sscanf( argv[ 1 ], "%u", &coord_page ) ) {
-			goto invalid_arg;
-		}
-	}
-	if ( argc >= 3 ){
-		if ( 1 != sscanf( argv[ 2 ], "%u", &addr_mode ) ) {
-			goto invalid_arg;
-		}
-	}
-	if ( argc >= 4 ){
-		if ( 1 != sscanf( argv[ 3 ], "%u", &coord_pan_id ) ) {
-			goto invalid_arg;
-		}
-	}
-	if ( argc >= 5 ){
-		if ( 1 != sscanf( argv[ 4 ], "%u", &coord_addr ) ) {
+	if ( argc == 2 ){
+		if ( 1 != sscanf( argv[ 1 ], "%u", &coord_addr ) ) {
 			goto invalid_arg;
 		}
 	}
 
-	if ( argc == 6 ){
-		if ( 1 != sscanf( argv[ 5 ], "%u", &capability_info ) ) {
-			goto invalid_arg;
-		}
-	}
 	if ( 0 != r ){
 		goto out;
 	}
@@ -327,7 +307,7 @@ invalid_arg:
 	r = 1;
 	goto out;
 }
-COMMAND(set, set_association_request, "<association request>",
+COMMAND(set, assoc_req, "<association request>",
 	NL802154_CMD_ASSOC_REQ, 0, CIB_NETDEV, handle_association_request, NULL);
 
 static int handle_association_confirm(struct nl802154_state *state,
@@ -369,5 +349,5 @@ invalid_arg:
 	r = 1;
 	goto out;
 }
-COMMAND(get, get_association_request, "<association confirm>",
+COMMAND(get, assoc_cnf, "<association confirm>",
 	NL802154_CMD_ASSOC_CNF, 0, CIB_NETDEV, handle_association_confirm, NULL);
