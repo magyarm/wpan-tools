@@ -209,9 +209,6 @@ static int print_association_confirm_handler(struct nl_msg *msg, void *arg)
 
 	struct genlmsghdr *gnlh;
 	struct nlattr *tb[ NL802154_ATTR_MAX + 1 ];
-	int i;
-
-	int i,j;
 
 	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
 	if ( NULL ==  gnlh ) {
