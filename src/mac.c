@@ -297,10 +297,10 @@ static int handle_association_request(struct nl802154_state *state,
     }
 
     r = 0;
+    goto out;
 
 nla_put_failure:
-	r = -ENOBUFS;
-
+    r = -ENOBUFS;
 out:
 	return r;
 invalid_arg:
@@ -340,9 +340,11 @@ static int handle_association_confirm(struct nl802154_state *state,
 		goto out;
 	}
 
-nla_put_failure:
-	r = -ENOBUFS;
+    r = 0;
+    goto out;
 
+nla_put_failure:
+    r = -ENOBUFS;
 out:
 	return r;
 invalid_arg:
