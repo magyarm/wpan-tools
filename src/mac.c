@@ -311,6 +311,13 @@ static int handle_association_request(struct nl802154_state *state,
 	}
 	NLA_PUT_U8(msg, NL802154_ATTR_CAPABILITY_INFO, capability_info);
 
+	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_association_confirm_handler, NULL );
+    if ( 0 != r ) {
+        goto out;
+    }
+
+    r = 0;
+
 nla_put_failure:
 	r = -ENOBUFS;
 
