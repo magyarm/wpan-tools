@@ -339,7 +339,6 @@ invalid_arg:
 COMMAND(get, ed_scan, "[<page> [<channels> [<duration>]]]",
     NL802154_CMD_ED_SCAN_REQ, 0, CIB_PHY, handle_ed_scan, NULL);
 
-
 static int print_beacon_notify_indication(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh;
@@ -386,3 +385,77 @@ static int handle_beacon_notify(struct nl802154_state *state,
 
 COMMAND(set, beacon_notify, "<none>",
     NL802154_CMD_SET_BEACON_NOTIFY, 0, CIB_PHY, handle_beacon_notify, NULL);
+
+static int print_active_scan_results( struct nl_msg *msg, void *arg)
+{
+	printf("Active Scan print results stub\n");
+}
+
+static int handle_active_scan(struct nl802154_state *state,
+               struct nl_cb *cb,
+               struct nl_msg *msg,
+               int argc, char **argv,
+               enum id_input id)
+{
+	int r;
+	int i;
+
+	const uint8_t scan_type = IEEE802154_MAC_SCAN_ACTIVE;
+	uint32_t channel_page = 0;
+	static uint32_t scan_channels;
+	uint32_t scan_duration = 3;
+
+	if ( argc >= 1 ) {
+		if ( 1 != sscanf( argv[ 0 ], "%u", &channel_page ) ) {
+			goto invalid_arg;
+		}
+	}
+	// specify a sane default of scan_channels
+	// if channel_page was specified or not
+	switch( channel_page ) {
+	case 0:
+		scan_channels = 1 << 17; //Hard code to scan channel 17
+		/* no break */
+	default:
+		break;
+	}
+	if ( argc >= 2 ) {
+		if ( ! (
+				( 0 == strncmp( "0x", argv[ 1], 2 ) && 1 == sscanf( argv[ 1 ] + 2, "%x", &scan_channels ) ) ||
+				1 == sscanf( argv[ 1 ], "%u", &scan_channels )
+		) ) {
+			goto invalid_arg;
+		}
+	}
+	if ( argc == 3 ) {
+		if ( 1 != sscanf( argv[ 2 ], "%u", &scan_duration ) ) {
+			goto invalid_arg;
+		}
+	}
+	if ( argc > 3 ) {
+		goto invalid_arg;
+	}
+
+	NLA_PUT_U8(msg, NL802154_ATTR_SCAN_TYPE, scan_type);
+	NLA_PUT_U32(msg, NL802154_ATTR_SUPPORTED_CHANNEL, scan_channels );
+	NLA_PUT_U8(msg, NL802154_ATTR_SCAN_DURATION, scan_duration);
+	NLA_PUT_U8(msg, NL802154_ATTR_PAGE, channel_page);
+
+	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_active_scan_results, &scan_channels );
+	if ( 0 != r ) {
+		goto out;
+	}
+
+	r = 0;
+	goto out;
+
+	nla_put_failure:
+	r = -ENOBUFS;
+	out:
+	return r;
+	invalid_arg:
+	r = 1;
+	goto out;
+}
+COMMAND(set, active_scan, "<none>",
+		NL802154_CMD_ACTIVE_SCAN_REQ, 0, CIB_PHY, handle_active_scan, NULL);
