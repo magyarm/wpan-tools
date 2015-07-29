@@ -16,10 +16,10 @@
 #include "iwpan.h"
 
 static int handle_pan_id_set(struct nl802154_state *state,
-                            struct nl_cb *cb,
-                            struct nl_msg *msg,
-                            int argc, char **argv,
-                            enum id_input id)
+			     struct nl_cb *cb,
+			     struct nl_msg *msg,
+			     int argc, char **argv,
+			     enum id_input id)
 {
 	unsigned long pan_id;
 	char *end;
@@ -133,10 +133,10 @@ COMMAND(set, backoff_exponents, "<min_be> <max_be>",
 	handle_backoff_exponent, NULL);
 
 static int handle_max_csma_backoffs(struct nl802154_state *state,
-					struct nl_cb *cb,
-					struct nl_msg *msg,
-					int argc, char **argv,
-					enum id_input id)
+				    struct nl_cb *cb,
+				    struct nl_msg *msg,
+				    int argc, char **argv,
+				    enum id_input id)
 {
 	unsigned long backoffs;
 	char *end;
