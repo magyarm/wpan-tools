@@ -191,7 +191,7 @@ COMMAND(set, lbt, "<1|0>",
 struct assoc_req {
 	uint32_t channel_number;
 	uint32_t channel_page;
-	uint32_t coord_pan_id;
+	uint16_t coord_pan_id;
 	uint64_t coord_address;
 	uint32_t capability_information;
 };
@@ -207,10 +207,9 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 
 	uint16_t assoc_short_address;
 	uint8_t status;
-
+	uint16_t pan_id;
 	struct genlmsghdr *gnlh;
 	struct nlattr *tb[ NL802154_ATTR_MAX + 1 ];
-	int i,j;
 
 	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
 	if ( NULL ==  gnlh ) {
@@ -227,6 +226,7 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 
 	if ( ! (
 		tb[ NL802154_ATTR_SHORT_ADDR ] &&
+		tb[ NL802154_ATTR_PAN_ID ] &&
 		tb[ NL802154_ATTR_ASSOC_STATUS ]
 	) ) {
 		r = -EINVAL;
@@ -234,12 +234,15 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 	}
 
 	assoc_short_address = nla_get_u16( tb[ NL802154_ATTR_SHORT_ADDR ] );
+	pan_id = nla_get_u16( tb[ NL802154_ATTR_PAN_ID ] );
 	status = nla_get_u8( tb[ NL802154_ATTR_ASSOC_STATUS ] );
 
 	printf(
 		"short_address: 0x%04x, "
+		"pan_id: 0x%04x, "
 		"status: %u",
 		assoc_short_address,
+		pan_id,
 		status
 	);
 
@@ -314,7 +317,7 @@ static int handle_assoc_req(struct nl802154_state *state,
 
 	NLA_PUT_U8(msg, NL802154_ATTR_CHANNEL, req.channel_number);
 	NLA_PUT_U8(msg, NL802154_ATTR_PAGE, req.channel_page);
-	NLA_PUT_U32(msg, NL802154_ATTR_PAN_ID, req.coord_pan_id );
+	NLA_PUT_U16(msg, NL802154_ATTR_PAN_ID, req.coord_pan_id );
 
 	if ( is_extended_address( req.coord_address ) ) {
 		NLA_PUT_U8(msg, NL802154_ATTR_ADDR_MODE, NL802154_ADDR_EXT );
