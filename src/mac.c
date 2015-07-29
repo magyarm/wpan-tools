@@ -240,7 +240,7 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 	printf(
 		"short_address: 0x%04x, "
 		"pan_id: 0x%04x, "
-		"status: %u",
+		"status: %u\n",
 		assoc_short_address,
 		pan_id,
 		status
