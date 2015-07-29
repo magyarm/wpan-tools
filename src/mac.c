@@ -275,8 +275,6 @@ static int handle_assoc_req(struct nl802154_state *state,
 
 	static struct assoc_req req;
 
-	printf( "argc == %d\n", argc );
-
 	if (
 		! (
 			5 == argc &&
