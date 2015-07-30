@@ -354,6 +354,7 @@ struct disassoc_req {
 	uint64_t device_address;
 	uint32_t disassociate_reason;
 	uint32_t tx_indirect;
+	uint32_t timeout_ms;
 };
 
 static int print_disassoc_cnf_handler(struct nl_msg *msg, void *arg)
@@ -457,11 +458,13 @@ static int handle_disassoc_req(struct nl802154_state *state,
 
 	int i;
 
-	static struct disassoc_req req;
+	static struct disassoc_req req = {
+		.timeout = 10000,
+	};
 
 	if (
 		! (
-			argc >= 3 && argc <= 4 &&
+			argc >= 3 && argc <= 5 &&
 			(
 				1 == sscanf( argv[ 0 ], "%u", &req.device_panid ) ||
 				(
@@ -500,6 +503,12 @@ static int handle_disassoc_req(struct nl802154_state *state,
 		}
 	}
 
+	if ( 5 == argc ) {
+		if ( 1 != sscanf( argv[ 4 ], "%u" , &req.timeout_ms ) ) {
+			goto invalid_arg;
+		}
+	}
+
 	req.device_addr_mode =
 		is_extended_address( req.device_address )
 		? NL802154_ADDR_EXT
@@ -516,6 +525,7 @@ static int handle_disassoc_req(struct nl802154_state *state,
 
 	NLA_PUT_U8(msg, NL802154_ATTR_DISASSOC_REASON, req.disassociate_reason);
 	NLA_PUT_U8(msg, NL802154_ATTR_DISASSOC_TX_INDIRECT, req.tx_indirect);
+	NLA_PUT_U16(msg, NL802154_ATTR_DISASSOC_TIMEOUT_MS, req.timeout_ms);
 
 	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_disassoc_cnf_handler, &req );
 	if ( 0 != r ) {
@@ -534,5 +544,5 @@ invalid_arg:
 	goto out;
 }
 
-COMMAND(set, disassoc, "<panid> <address> <reason> <txindirect>",
+COMMAND(set, disassoc, "<panid> <address> <reason> [<txindirect> [<timeout_ms>]]",
 	NL802154_CMD_DISASSOC_REQ, 0, CIB_NETDEV, handle_disassoc_req, NULL);
