@@ -398,7 +398,7 @@ static int print_disassoc_cnf_handler(struct nl_msg *msg, void *arg)
 		goto out;
 	}
 
-	status = nla_get_u8( tb[ NL802154_ATTR_ASSOC_STATUS ] );
+	status = nla_get_u8( tb[ NL802154_ATTR_DISASSOC_STATUS ] );
 	device_addr_mode = nla_get_u8( tb[ NL802154_ATTR_ADDR_MODE ] );
 	device_panid = nla_get_u16( tb[ NL802154_ATTR_ASSOC_STATUS ] );
 
