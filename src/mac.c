@@ -459,7 +459,7 @@ static int handle_disassoc_req(struct nl802154_state *state,
 	int i;
 
 	static struct disassoc_req req = {
-		.timeout = 10000,
+		.timeout_ms = 10000,
 	};
 
 	if (
