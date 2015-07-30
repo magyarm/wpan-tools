@@ -207,7 +207,6 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 
 	uint16_t assoc_short_address;
 	uint8_t status;
-	uint16_t pan_id;
 	struct genlmsghdr *gnlh;
 	struct nlattr *tb[ NL802154_ATTR_MAX + 1 ];
 
@@ -226,7 +225,6 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 
 	if ( ! (
 		tb[ NL802154_ATTR_SHORT_ADDR ] &&
-		tb[ NL802154_ATTR_PAN_ID ] &&
 		tb[ NL802154_ATTR_ASSOC_STATUS ]
 	) ) {
 		r = -EINVAL;
@@ -234,15 +232,13 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 	}
 
 	assoc_short_address = nla_get_u16( tb[ NL802154_ATTR_SHORT_ADDR ] );
-	pan_id = nla_get_u16( tb[ NL802154_ATTR_PAN_ID ] );
 	status = nla_get_u8( tb[ NL802154_ATTR_ASSOC_STATUS ] );
 
 	printf(
+		"Association Confirm: "
 		"short_address: 0x%04x, "
-		"pan_id: 0x%04x, "
 		"status: %u\n",
 		assoc_short_address,
-		pan_id,
 		status
 	);
 
@@ -293,11 +289,11 @@ static int handle_assoc_req(struct nl802154_state *state,
 				)
 			) &&
 			(
-				1 == sscanf( argv[ 3 ], PRId64 , &req.coord_address ) ||
+				1 == sscanf( argv[ 3 ], "%"PRId64 , &req.coord_address ) ||
 				(
 					!(
 						0 == strncmp( hex_prefix, argv[ 3 ], strlen( hex_prefix ) ) &&
-						1 == sscanf( argv[ 3 ] + strlen( hex_prefix ), PRIx64, &req.coord_address )
+						1 == sscanf( argv[ 3 ] + strlen( hex_prefix ), "%"PRIx64, &req.coord_address )
 					)
 				)
 			) &&
