@@ -400,7 +400,7 @@ static int print_disassoc_cnf_handler(struct nl_msg *msg, void *arg)
 
 	status = nla_get_u8( tb[ NL802154_ATTR_DISASSOC_STATUS ] );
 	device_addr_mode = nla_get_u8( tb[ NL802154_ATTR_ADDR_MODE ] );
-	device_panid = nla_get_u16( tb[ NL802154_ATTR_ASSOC_STATUS ] );
+	device_panid = nla_get_u16( tb[ NL802154_ATTR_PAN_ID ] );
 
 	switch( device_addr_mode ) {
 	case NL802154_ADDR_SHORT:
@@ -501,6 +501,8 @@ static int handle_disassoc_req(struct nl802154_state *state,
 		if ( 1 != sscanf( argv[ 3 ], "%u" , &req.tx_indirect ) ) {
 			goto invalid_arg;
 		}
+	} else {
+		req.tx_indirect = 0;
 	}
 
 	if ( 5 == argc ) {
