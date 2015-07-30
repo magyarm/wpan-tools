@@ -215,6 +215,7 @@ static const char *commands[NL802154_CMD_MAX + 1] = {
 	[NL802154_CMD_ASSOC_REQ] = "assoc_req",
 	[NL802154_CMD_ASSOC_CNF] = "assoc_cnf",
 	[NL802154_CMD_ED_SCAN_REQ] = "get_ed_scan",
+	[NL802154_CMD_ASSOC_REQ] = "set_assoc",
 };
 
 static char cmdbuf[100];
