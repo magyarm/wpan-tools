@@ -393,6 +393,7 @@ static int print_disassoc_cnf_handler(struct nl_msg *msg, void *arg)
 			tb[ NL802154_ATTR_EXTENDED_ADDR ]
 		)
 	) ) {
+		fprintf( stderr, "missing some fields\n" );
 		r = -EINVAL;
 		goto out;
 	}
@@ -415,6 +416,7 @@ static int print_disassoc_cnf_handler(struct nl_msg *msg, void *arg)
 			break;
 		}
 	default:
+		fprintf( stderr, "unknown device_addr_mode %d\n", device_addr_mode );
 		r = -EINVAL;
 		goto out;
 	}
@@ -458,9 +460,7 @@ static int handle_disassoc_req(struct nl802154_state *state,
 
 	int i;
 
-	static struct disassoc_req req = {
-		.timeout_ms = 10000,
-	};
+	static struct disassoc_req req;
 
 	if (
 		! (
@@ -497,7 +497,7 @@ static int handle_disassoc_req(struct nl802154_state *state,
 		goto invalid_arg;
 	}
 
-	if ( 4 == argc ) {
+	if ( argc >= 4 ) {
 		if ( 1 != sscanf( argv[ 3 ], "%u" , &req.tx_indirect ) ) {
 			goto invalid_arg;
 		}
@@ -507,6 +507,8 @@ static int handle_disassoc_req(struct nl802154_state *state,
 		if ( 1 != sscanf( argv[ 4 ], "%u" , &req.timeout_ms ) ) {
 			goto invalid_arg;
 		}
+	} else {
+		req.timeout_ms = 10000;
 	}
 
 	req.device_addr_mode =
