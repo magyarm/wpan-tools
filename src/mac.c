@@ -199,6 +199,7 @@ struct assoc_req {
 	uint32_t channel_number;
 	uint32_t channel_page;
 	uint32_t coord_pan_id;
+	uint8_t coord_addr_mode;
 	uint64_t coord_address;
 	uint32_t capability_information;
 };
@@ -206,6 +207,42 @@ struct assoc_req {
 static inline bool is_extended_address( uint64_t addr ) {
 	static const uint64_t mask = ~((1 << 16) - 1);
 	return mask & addr;
+}
+
+static inline uint8_t address_mode( uint64_t addr ) {
+	return is_extended_address( addr )
+		? NL802154_ADDR_EXT
+		: NL802154_ADDR_SHORT;
+}
+
+static void dump_assoc_req( struct assoc_req *req ) {
+	char coord_address[] = "0x0011223344556677";
+	if ( is_extended_address( req->coord_address ) ) {
+		snprintf( coord_address, sizeof(coord_address),
+			"0x%016" PRIx64,
+			req->coord_address
+		);
+	} else {
+		snprintf( coord_address, sizeof(coord_address),
+			"0x%04x",
+			(uint16_t) req->coord_address
+		);
+	}
+	printf(
+		"association request:\n\t"
+		"channel_number: %u\n\t"
+		"channel_page: %u\n\t"
+		"coord_pan_id: 0x%04x\n\t"
+		"coord_addr_mode: %u\n\t"
+		"coord_address: %s\n\t"
+		"capability_information: 0x%02x\n",
+		req->channel_number,
+		req->channel_page,
+		req->coord_pan_id,
+		req->coord_addr_mode,
+		coord_address,
+		req->capability_information
+	);
 }
 
 static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
@@ -273,6 +310,7 @@ static int handle_assoc_req(struct nl802154_state *state,
 	int r;
 
 	int i;
+	int argi = 0;
 
 	static struct assoc_req req;
 
@@ -282,31 +320,25 @@ static int handle_assoc_req(struct nl802154_state *state,
 			1 == sscanf( argv[ 0 ], "%u", &req.channel_number ) &&
 			1 == sscanf( argv[ 1 ], "%u", &req.channel_page ) &&
 			(
-				1 == sscanf( argv[ 2 ], "%u", &req.coord_pan_id ) ||
 				(
-					!(
-						0 == strncmp( hex_prefix, argv[ 2 ], strlen( hex_prefix ) ) &&
-						1 == sscanf( argv[ 2 ] + strlen( hex_prefix ), "%x", &req.coord_pan_id )
-					)
-				)
+					0 == strncmp( hex_prefix, argv[ 2 ], strlen( hex_prefix ) ) &&
+					1 == sscanf( argv[ 2 ] + strlen( hex_prefix ), "%x", &req.coord_pan_id )
+				) ||
+				1 == sscanf( argv[ 2 ], "%u", &req.coord_pan_id )
 			) &&
 			(
-				1 == sscanf( argv[ 3 ], PRId64 , &req.coord_address ) ||
 				(
-					!(
-						0 == strncmp( hex_prefix, argv[ 3 ], strlen( hex_prefix ) ) &&
-						1 == sscanf( argv[ 3 ] + strlen( hex_prefix ), PRIx64, &req.coord_address )
-					)
-				)
+					0 == strncmp( hex_prefix, argv[ 3 ], strlen( hex_prefix ) ) &&
+					1 == sscanf( argv[ 3 ] + strlen( hex_prefix ), "%"PRIx64, &req.coord_address )
+				) ||
+				1 == sscanf( argv[ 3 ], "%"PRIu64 , &req.coord_address )
 			) &&
 			(
-				1 == sscanf( argv[ 4 ], "%u" , &req.capability_information ) ||
 				(
-					!(
-						0 == strncmp( hex_prefix, argv[ 4 ], strlen( hex_prefix ) ) &&
-						1 == sscanf( argv[ 4 ] + strlen( hex_prefix ), "%x", &req.capability_information )
-					)
-				)
+					0 == strncmp( hex_prefix, argv[ 4 ], strlen( hex_prefix ) ) &&
+					1 == sscanf( argv[ 4 ] + strlen( hex_prefix ), "%x", &req.capability_information )
+				) ||
+				1 == sscanf( argv[ 4 ], "%u" , &req.capability_information )
 			)
 		)
 	) {
@@ -317,15 +349,19 @@ static int handle_assoc_req(struct nl802154_state *state,
 	NLA_PUT_U8(msg, NL802154_ATTR_PAGE, req.channel_page);
 	NLA_PUT_U32(msg, NL802154_ATTR_PAN_ID, req.coord_pan_id );
 
+	req.coord_addr_mode = address_mode( req.coord_address );
+
+	NLA_PUT_U8(msg, NL802154_ATTR_ADDR_MODE, req.coord_addr_mode );
+
 	if ( is_extended_address( req.coord_address ) ) {
-		NLA_PUT_U8(msg, NL802154_ATTR_ADDR_MODE, NL802154_ADDR_EXT );
 		NLA_PUT_U64(msg, NL802154_ATTR_EXTENDED_ADDR, req.coord_address );
 	} else {
-		NLA_PUT_U8(msg, NL802154_ATTR_ADDR_MODE, NL802154_ADDR_SHORT );
 		NLA_PUT_U16(msg, NL802154_ATTR_SHORT_ADDR, req.coord_address );
 	}
 
 	NLA_PUT_U8(msg, NL802154_ATTR_ASSOC_CAP_INFO, req.capability_information);
+
+	// dump_assoc_req( &req );
 
 	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_assoc_cnf_handler, &req );
 	if ( 0 != r ) {
