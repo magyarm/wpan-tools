@@ -194,6 +194,7 @@ struct assoc_req {
 	uint16_t coord_pan_id;
 	uint64_t coord_address;
 	uint32_t capability_information;
+	uint16_t timeout_ms;
 };
 
 static inline bool is_extended_address( uint64_t addr ) {
@@ -276,7 +277,7 @@ static int handle_assoc_req(struct nl802154_state *state,
 
 	if (
 		! (
-			5 == argc &&
+			6 == argc &&
 			1 == sscanf( argv[ 0 ], "%u", &req.channel_number ) &&
 			1 == sscanf( argv[ 1 ], "%u", &req.channel_page ) &&
 			(
@@ -305,7 +306,7 @@ static int handle_assoc_req(struct nl802154_state *state,
 						1 == sscanf( argv[ 4 ] + strlen( hex_prefix ), "%x", &req.capability_information )
 					)
 				)
-			)
+			) && 1 == sscanf( argv[ 5 ], "%u", &req.timeout_ms )
 		)
 	) {
 		goto invalid_arg;
@@ -325,6 +326,8 @@ static int handle_assoc_req(struct nl802154_state *state,
 
 	NLA_PUT_U8(msg, NL802154_ATTR_ASSOC_CAP_INFO, req.capability_information);
 
+	NLA_PUT_U16(msg, NL802154_ATTR_ASSOC_TIMEOUT_MS, req.timeout_ms);
+
 	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_assoc_cnf_handler, &req );
 	if ( 0 != r ) {
 		goto out;
@@ -342,5 +345,5 @@ invalid_arg:
 	goto out;
 }
 
-COMMAND(set, assoc, "<channel> <page> <coord_panid> <coord_addr> <cap_info>",
+COMMAND(set, assoc, "<channel> <page> <coord_panid> <coord_addr> <cap_info> <timeout_ms>",
 	NL802154_CMD_ASSOC_REQ, 0, CIB_PHY, handle_assoc_req, NULL);

@@ -129,6 +129,7 @@ enum nl802154_attrs {
 	NL802154_ATTR_ADDR_MODE,
 	NL802154_ATTR_ASSOC_CAP_INFO,
 	NL802154_ATTR_ASSOC_STATUS,
+	NL802154_ATTR_ASSOC_TIMEOUT_MS,
 
 	/* add attributes here, update the policy in nl802154.c */
 
