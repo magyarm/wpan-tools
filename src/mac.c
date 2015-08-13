@@ -311,12 +311,13 @@ static int handle_assoc_req(struct nl802154_state *state,
 
 	int i;
 	int argi = 0;
+	uint32_t timeout_ms;
 
 	static struct assoc_req req;
 
 	if (
 		! (
-			5 == argc &&
+			6 == argc &&
 			1 == sscanf( argv[ 0 ], "%u", &req.channel_number ) &&
 			1 == sscanf( argv[ 1 ], "%u", &req.channel_page ) &&
 			(
@@ -339,7 +340,8 @@ static int handle_assoc_req(struct nl802154_state *state,
 					1 == sscanf( argv[ 4 ] + strlen( hex_prefix ), "%x", &req.capability_information )
 				) ||
 				1 == sscanf( argv[ 4 ], "%u" , &req.capability_information )
-			)
+			) &&
+			1 == sscanf( argv[ 5 ], "%u", &timeout_ms )
 		)
 	) {
 		goto invalid_arg;
@@ -360,6 +362,7 @@ static int handle_assoc_req(struct nl802154_state *state,
 	}
 
 	NLA_PUT_U8(msg, NL802154_ATTR_ASSOC_CAP_INFO, req.capability_information);
+	NLA_PUT_U16(msg, NL802154_ATTR_ASSOC_TIMEOUT_MS, timeout_ms);
 
 	// dump_assoc_req( &req );
 
@@ -381,7 +384,7 @@ invalid_arg:
 }
 
 COMMAND(set, assoc, "<channel> <page> <coord_panid> <coord_addr> <cap_info>",
-	NL802154_CMD_ASSOC_REQ, 0, CIB_PHY, handle_assoc_req, NULL);
+	NL802154_CMD_ASSOC_REQ, 0, CIB_NETDEV, handle_assoc_req, NULL);
 
 
 struct disassoc_req {
