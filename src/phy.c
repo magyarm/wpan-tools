@@ -458,4 +458,4 @@ static int handle_active_scan(struct nl802154_state *state,
 	goto out;
 }
 COMMAND(set, active_scan, "<none>",
-		NL802154_CMD_ACTIVE_SCAN_REQ, 0, CIB_PHY, handle_active_scan, NULL);
+		NL802154_CMD_ACTIVE_SCAN_REQ, 0, CIB_NETDEV, handle_active_scan, NULL);
