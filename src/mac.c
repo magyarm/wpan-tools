@@ -396,6 +396,32 @@ struct disassoc_req {
 	uint32_t timeout_ms;
 };
 
+static void dump_disassoc_req( struct disassoc_req *req ) {
+	char device_address[] = "0x0011223344556677";
+	if ( is_extended_address( req->device_address ) ) {
+		snprintf( device_address, sizeof(device_address),
+			"0x%016" PRIx64,
+			req->device_address
+		);
+	} else {
+		snprintf( device_address, sizeof(device_address),
+			"0x%04x",
+			(uint16_t) req->device_address
+		);
+	}
+	printf(
+		"disassociation request:\n\t"
+		"device_panid: 0x%04x\n\t"
+		"device_addr_mode: %u\n\t"
+		"device_address: %s\n\t"
+		"disassociate_reason: %u\n\t",
+		req->device_panid,
+		req->device_addr_mode,
+		device_address,
+		req->disassociate_reason
+	);
+}
+
 static int print_disassoc_cnf_handler(struct nl_msg *msg, void *arg)
 {
 	int r;
@@ -503,53 +529,33 @@ static int handle_disassoc_req(struct nl802154_state *state,
 
 	if (
 		! (
-			argc >= 3 && argc <= 5 &&
+			5 == argc &&
 			(
-				1 == sscanf( argv[ 0 ], "%u", &req.device_panid ) ||
 				(
-					!(
-						0 == strncmp( hex_prefix, argv[ 0 ], strlen( hex_prefix ) ) &&
-						1 == sscanf( argv[ 0 ] + strlen( hex_prefix ), "%x", &req.device_panid )
-					)
-				)
+					0 == strncmp( hex_prefix, argv[ 0 ], strlen( hex_prefix ) ) &&
+					1 == sscanf( argv[ 0 ] + strlen( hex_prefix ), "%x", &req.device_panid )
+				) ||
+				1 == sscanf( argv[ 0 ], "%u", &req.device_panid )
 			) &&
 			(
-				1 == sscanf( argv[ 1 ], "%"PRId64 , &req.device_address ) ||
 				(
-					!(
-						0 == strncmp( hex_prefix, argv[ 1 ], strlen( hex_prefix ) ) &&
-						1 == sscanf( argv[ 1 ] + strlen( hex_prefix ), "%"PRIx64, &req.device_address )
-					)
-				)
+					0 == strncmp( hex_prefix, argv[ 1 ], strlen( hex_prefix ) ) &&
+					1 == sscanf( argv[ 1 ] + strlen( hex_prefix ), "%"PRIx64, &req.device_address )
+				) ||
+				1 == sscanf( argv[ 1 ], "%"PRId64 , &req.device_address )
 			) &&
 			(
-				1 == sscanf( argv[ 2 ], "%u" , &req.disassociate_reason ) ||
 				(
-					!(
-						0 == strncmp( hex_prefix, argv[ 2 ], strlen( hex_prefix ) ) &&
-						1 == sscanf( argv[ 2 ] + strlen( hex_prefix ), "%x", &req.disassociate_reason )
-					)
-				)
-			)
+					0 == strncmp( hex_prefix, argv[ 2 ], strlen( hex_prefix ) ) &&
+					1 == sscanf( argv[ 2 ] + strlen( hex_prefix ), "%x", &req.disassociate_reason )
+				) ||
+				1 == sscanf( argv[ 2 ], "%u" , &req.disassociate_reason )
+			) &&
+			1 == sscanf( argv[ 3 ], "%u" , &req.tx_indirect ) &&
+			1 == sscanf( argv[ 4 ], "%u" , &req.timeout_ms )
 		)
 	) {
 		goto invalid_arg;
-	}
-
-	if ( argc >= 4 ) {
-		if ( 1 != sscanf( argv[ 3 ], "%u" , &req.tx_indirect ) ) {
-			goto invalid_arg;
-		}
-	} else {
-		req.tx_indirect = 0;
-	}
-
-	if ( 5 == argc ) {
-		if ( 1 != sscanf( argv[ 4 ], "%u" , &req.timeout_ms ) ) {
-			goto invalid_arg;
-		}
-	} else {
-		req.timeout_ms = 10000;
 	}
 
 	req.device_addr_mode =
@@ -570,6 +576,8 @@ static int handle_disassoc_req(struct nl802154_state *state,
 	NLA_PUT_U8(msg, NL802154_ATTR_DISASSOC_TX_INDIRECT, req.tx_indirect);
 	NLA_PUT_U16(msg, NL802154_ATTR_DISASSOC_TIMEOUT_MS, req.timeout_ms);
 
+	dump_disassoc_req( &req );
+
 	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_disassoc_cnf_handler, &req );
 	if ( 0 != r ) {
 		goto out;
@@ -587,5 +595,5 @@ invalid_arg:
 	goto out;
 }
 
-COMMAND(set, disassoc, "<panid> <address> <reason> [<txindirect> [<timeout_ms>]]",
+COMMAND(set, disassoc, "<panid> <address> <reason> <txindirect> <timeout_ms>",
 	NL802154_CMD_DISASSOC_REQ, 0, CIB_NETDEV, handle_disassoc_req, NULL);
