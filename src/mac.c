@@ -198,10 +198,10 @@ enum nl802154_address_modes {
 struct assoc_req {
 	uint32_t channel_number;
 	uint32_t channel_page;
-	uint32_t coord_pan_id;
-	uint8_t coord_addr_mode;
+	uint16_t coord_pan_id;
 	uint64_t coord_address;
 	uint32_t capability_information;
+	uint16_t timeout_ms;
 };
 
 static inline bool is_extended_address( uint64_t addr ) {
@@ -251,10 +251,8 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 
 	uint16_t assoc_short_address;
 	uint8_t status;
-
 	struct genlmsghdr *gnlh;
 	struct nlattr *tb[ NL802154_ATTR_MAX + 1 ];
-	int i,j;
 
 	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
 	if ( NULL ==  gnlh ) {
@@ -281,6 +279,7 @@ static int print_assoc_cnf_handler(struct nl_msg *msg, void *arg)
 	status = nla_get_u8( tb[ NL802154_ATTR_ASSOC_STATUS ] );
 
 	printf(
+		"Association Confirm: "
 		"short_address: 0x%04x, "
 		"status: %u\n",
 		assoc_short_address,
@@ -328,20 +327,23 @@ static int handle_assoc_req(struct nl802154_state *state,
 				1 == sscanf( argv[ 2 ], "%u", &req.coord_pan_id )
 			) &&
 			(
+				1 == sscanf( argv[ 3 ], "%"PRId64 , &req.coord_address ) ||
 				(
-					0 == strncmp( hex_prefix, argv[ 3 ], strlen( hex_prefix ) ) &&
-					1 == sscanf( argv[ 3 ] + strlen( hex_prefix ), "%"PRIx64, &req.coord_address )
-				) ||
-				1 == sscanf( argv[ 3 ], "%"PRIu64 , &req.coord_address )
+					!(
+						0 == strncmp( hex_prefix, argv[ 3 ], strlen( hex_prefix ) ) &&
+						1 == sscanf( argv[ 3 ] + strlen( hex_prefix ), "%"PRIx64, &req.coord_address )
+					)
+				)
 			) &&
 			(
+				1 == sscanf( argv[ 4 ], "%u" , &req.capability_information ) ||
 				(
-					0 == strncmp( hex_prefix, argv[ 4 ], strlen( hex_prefix ) ) &&
-					1 == sscanf( argv[ 4 ] + strlen( hex_prefix ), "%x", &req.capability_information )
-				) ||
-				1 == sscanf( argv[ 4 ], "%u" , &req.capability_information )
-			) &&
-			1 == sscanf( argv[ 5 ], "%u", &timeout_ms )
+					!(
+						0 == strncmp( hex_prefix, argv[ 4 ], strlen( hex_prefix ) ) &&
+						1 == sscanf( argv[ 4 ] + strlen( hex_prefix ), "%x", &req.capability_information )
+					)
+				)
+			) && 1 == sscanf( argv[ 5 ], "%u", &req.timeout_ms )
 		)
 	) {
 		goto invalid_arg;
@@ -349,7 +351,7 @@ static int handle_assoc_req(struct nl802154_state *state,
 
 	NLA_PUT_U8(msg, NL802154_ATTR_CHANNEL, req.channel_number);
 	NLA_PUT_U8(msg, NL802154_ATTR_PAGE, req.channel_page);
-	NLA_PUT_U32(msg, NL802154_ATTR_PAN_ID, req.coord_pan_id );
+	NLA_PUT_U16(msg, NL802154_ATTR_PAN_ID, req.coord_pan_id );
 
 	req.coord_addr_mode = address_mode( req.coord_address );
 
@@ -365,6 +367,8 @@ static int handle_assoc_req(struct nl802154_state *state,
 	NLA_PUT_U16(msg, NL802154_ATTR_ASSOC_TIMEOUT_MS, timeout_ms);
 
 	// dump_assoc_req( &req );
+
+	NLA_PUT_U16(msg, NL802154_ATTR_ASSOC_TIMEOUT_MS, req.timeout_ms);
 
 	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_assoc_cnf_handler, &req );
 	if ( 0 != r ) {
@@ -383,8 +387,8 @@ invalid_arg:
 	goto out;
 }
 
-COMMAND(set, assoc, "<channel> <page> <coord_panid> <coord_addr> <cap_info>",
-	NL802154_CMD_ASSOC_REQ, 0, CIB_NETDEV, handle_assoc_req, NULL);
+COMMAND(set, assoc, "<channel> <page> <coord_panid> <coord_addr> <cap_info><timeout_ms>",
+	NL802154_CMD_ASSOC_REQ, 0, CIB_PHY, handle_assoc_req, NULL);
 
 
 struct disassoc_req {
