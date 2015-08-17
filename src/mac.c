@@ -477,7 +477,7 @@ static int print_disassoc_cnf_handler(struct nl_msg *msg, void *arg)
 	case NL802154_ADDR_EXT:
 		if ( tb[ NL802154_ATTR_EXTENDED_ADDR  ] ) {
 			device_address = nla_get_u64( tb[ NL802154_ATTR_EXTENDED_ADDR ] );
-			snprintf( device_addr_buf, sizeof( device_addr_buf ), "0x%0" PRIx64, device_address );
+			snprintf( device_addr_buf, sizeof( device_addr_buf ), "0x%016" PRIx64, device_address );
 			break;
 		}
 	default:
@@ -576,7 +576,7 @@ static int handle_disassoc_req(struct nl802154_state *state,
 	NLA_PUT_U8(msg, NL802154_ATTR_DISASSOC_TX_INDIRECT, req.tx_indirect);
 	NLA_PUT_U16(msg, NL802154_ATTR_DISASSOC_TIMEOUT_MS, req.timeout_ms);
 
-	dump_disassoc_req( &req );
+	// dump_disassoc_req( &req );
 
 	r = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_disassoc_cnf_handler, &req );
 	if ( 0 != r ) {
