@@ -315,7 +315,6 @@ enum nl802154_supported_bool_states {
 };
 
 //Bringing in the scan type defines from ieee802154_netdev.h in the kernel.
-//Todo: find a better home for these defines.
 #define IEEE802154_MAC_SCAN_ED		0
 #define IEEE802154_MAC_SCAN_ACTIVE	1
 #define IEEE802154_MAC_SCAN_PASSIVE	2
