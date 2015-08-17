@@ -388,61 +388,7 @@ COMMAND(set, beacon_notify, "<none>",
 
 static int print_active_scan_results( struct nl_msg *msg, void *arg)
 {
-	struct genlmsghdr *gnlh;
-	struct nlattr *tb_msg[NL802154_ATTR_MAX + 1];
-	unsigned int *wpan_phy = arg;
-	int r;
-
-	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
-	if ( NULL ==  gnlh ) {
-	    fprintf( stderr, "gnlh was null\n" );
-	    goto protocol_error;
-	}
-
-	r = nla_parse( tb_msg, NL802154_ATTR_MAX, genlmsg_attrdata( gnlh, 0 ),
-	      genlmsg_attrlen( gnlh, 0 ), NULL );
-	if ( 0 != r ) {
-	    fprintf( stderr, "nla_parse\n" );
-	    goto protocol_error;
-	}
-
-	printf("Active Scan print results \n");
-	//Check if the message is a beacon or the last status message
-	if(tb_msg[NL802154_ATTR_PAN_DESCRIPTOR]) {
-		//Beacon is nested NLA
-		printf( "Pan Descriptor Received\n" );
-		printf( "\tAddress Mode: %d\n", nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_SRC_ADDR_MODE] ) );
-		printf( "\tSource Pan ID: %x\n", nla_get_u16( tb_msg[NL802154_ATTR_PAN_DESC_SRC_PAN_ID] ) );
-		printf( "\tSource Address: %x\n",nla_get_u32( tb_msg[NL802154_ATTR_PAN_DESC_SRC_ADDR] ) );
-		printf( "\tChannel Number: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_CHANNEL_NUM] ) );
-		printf( "\tChannel Page: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_CHANNEL_PAGE] ) );
-		printf( "\tSuperFrame Spec: %d",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_SUPERFRAME_SPEC] ) );
-		printf( "\tGTS Permit: %d",nla_get_u32( tb_msg[NL802154_ATTR_PAN_DESC_GTS_PERMIT] ) );
-		printf( "\tLQI: %d",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_LQI] ) );
-		printf( "\tTime Stamp: %d",nla_get_u32( tb_msg[NL802154_ATTR_PAN_DESC_TIME_STAMP] ) );
-		printf( "\tSecurity Status: %d",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_SEC_STATUS] ) );
-		printf( "\tSecurity Level: %d",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_SEC_LEVEL] ) );
-		printf( "\tKey ID Mode: %d",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_KEY_ID_MODE] ) );
-		printf( "\tKey Source: %d",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_KEY_SRC] ) );
-		printf( "\tKey Index: %d",nla_get_u8( tb_msg[NL802154_ATTR_PAN_DESC_KEY_INDEX] ) );
-
-	} else if( tb_msg[NL802154_ATTR_SCAN_STATUS]){
-		printf( "\tScan Status: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_STATUS] ) );
-		printf( "\tScan Type: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_TYPE] ) );
-		printf( "\tAttribute Page: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_PAGE] ) );
-		printf( "\tScan Detect Category: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_DETECTED_CATEGORY] ) );
-		printf( "\tScan Result List Size: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_RESULT_LIST_SIZE] ) );
-
-	} else {
-		goto protocol_error;
-	}
-
-
-	protocol_error:
-	    fprintf( stderr, "protocol error\n" );
-	    r = -EINVAL;
-	out:
-	    return NL_SKIP;
+	printf("Active Scan print results stub\n");
 }
 
 static int handle_active_scan(struct nl802154_state *state,
@@ -468,7 +414,7 @@ static int handle_active_scan(struct nl802154_state *state,
 	// if channel_page was specified or not
 	switch( channel_page ) {
 	case 0:
-		scan_channels = (1<<17); //Hard code to scan channels 17
+		scan_channels = 1 << 17; //Hard code to scan channel 17
 		/* no break */
 	default:
 		break;
