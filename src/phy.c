@@ -381,7 +381,7 @@ static int print_active_scan_results( struct nl_msg *msg, void *arg)
 			[NL802154_ATTR_PAN_DESC_KEY_INDEX] = { .type = NLA_U8 },
 		};
 
-		printf("PAN descriptor:\n");
+		printf("pan_descriptor:\n");
 
 		r = nla_parse_nested(tb_pan_desc, NL802154_ATTR_MAX,
 				       tb_msg[NL802154_ATTR_PAN_DESCRIPTOR],
@@ -392,58 +392,58 @@ static int print_active_scan_results( struct nl_msg *msg, void *arg)
 		}
 
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR_MODE]) {
-		    printf("\tSrc Addr Mode: %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR_MODE]));
+		    printf("\tsrc_addr_mode: %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR_MODE]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_PAN_ID]) {
-		    printf("\tSrc PAN Id   : %x\n", nla_get_u16(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_PAN_ID]));
+		    printf("\tsrc_pan_id: %x\n", nla_get_u16(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_PAN_ID]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR]) {
-		    printf("\tSrc Addr     : %d\n", nla_get_u32(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR]));
+		    printf("\tsrc_addr: %d\n", nla_get_u32(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_NUM]) {
-		    printf("\tChannel Num  : %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_NUM]));
+		    printf("\tchannel_num: %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_NUM]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_PAGE]) {
-		    printf("\tChannel Page : %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_PAGE]));
+		    printf("\tchannel_page: %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_PAGE]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_SUPERFRAME_SPEC]) {
-		    printf("\tSF spec      : %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SUPERFRAME_SPEC]));
+		    printf("\tsuper_frame_spec: %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SUPERFRAME_SPEC]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_GTS_PERMIT]) {
 			char *gts = nla_get_u32(tb_pan_desc[NL802154_ATTR_PAN_DESC_GTS_PERMIT]) ? "TRUE" : "FALSE";
-		    printf("\tGTS permit   : %s\n", gts);
+		    printf("\tgts_permit: %s\n", gts);
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_LQI]) {
-		    printf("\tLQI          : %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_LQI]));
+		    printf("\tlqi: %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_LQI]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_TIME_STAMP]) {
-		    printf("\tTimestamp    : %x\n", nla_get_u32(tb_pan_desc[NL802154_ATTR_PAN_DESC_TIME_STAMP]));
+		    printf("\ttimestamp: %x\n", nla_get_u32(tb_pan_desc[NL802154_ATTR_PAN_DESC_TIME_STAMP]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_SEC_STATUS]) {
-		    printf("\tSec status   : %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SEC_STATUS]));
+		    printf("\tsec_status: %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SEC_STATUS]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_SEC_LEVEL]) {
-		    printf("\tSec level    : %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SEC_LEVEL]));
+		    printf("\tsec_level: %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_SEC_LEVEL]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_ID_MODE]) {
-		    printf("\tKey Id Mode  : %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_ID_MODE]));
+		    printf("\tkey_id_mode: %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_ID_MODE]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_SRC]) {
-		    printf("\tKey Src      : %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_SRC]));
+		    printf("\tkey_src: %x\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_SRC]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_INDEX]) {
-		    printf("\tKey Index    : %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_INDEX]));
+		    printf("\tkey_index: %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_KEY_INDEX]));
 		}
 		goto out;
 
 	} else if( tb_msg[NL802154_ATTR_SCAN_STATUS]){
-		printf( "Active Scan Confirm \n");
-		printf( "\tScan Status: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_STATUS] ) );
-		printf( "\tScan Type: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_TYPE] ) );
-		printf( "\tAttribute Page: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_PAGE] ) );
-		printf( "\tScan Detect Category: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_DETECTED_CATEGORY] ) );
-		printf( "\tScan Result List Size: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_RESULT_LIST_SIZE] ) );
-
+		printf( "active_scan_confirm \n");
+		printf( "\tscan_status: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_STATUS] ) );
+		printf( "\tscan_type: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_TYPE] ) );
+		printf( "\tattribute_page: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_PAGE] ) );
+		printf( "\tscan_detect_category: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_DETECTED_CATEGORY] ) );
+		printf( "\tscan_result_list_size: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_RESULT_LIST_SIZE] ) );
+		goto out;
 	} else {
 		goto protocol_error;
 	}
@@ -512,5 +512,5 @@ static int handle_active_scan(struct nl802154_state *state,
 	r = 1;
 	goto out;
 }
-COMMAND(set, active_scan, "<channel_page> <scan channel bitmask> <scan duration>",
+COMMAND(get, active_scan, "<channel_page> <scan channel bitmask> <scan duration>",
 		NL802154_CMD_ACTIVE_SCAN_REQ, 0, CIB_NETDEV, handle_active_scan, NULL);
