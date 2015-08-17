@@ -214,6 +214,7 @@ static const char *commands[NL802154_CMD_MAX + 1] = {
 	[NL802154_CMD_SET_LBT_MODE] = "set_lbt_mode",
 	[NL802154_CMD_ED_SCAN_REQ] = "get_ed_scan",
 	[NL802154_CMD_ASSOC_REQ] = "set_assoc",
+	[NL802154_CMD_DISASSOC_REQ] = "set_disassoc",
 };
 
 static char cmdbuf[100];
