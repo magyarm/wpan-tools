@@ -320,16 +320,4 @@ enum nl802154_supported_bool_states {
 #define IEEE802154_MAC_SCAN_PASSIVE	2
 #define IEEE802154_MAC_SCAN_ORPHAN	3
 
-struct ieee802154_beacon_indication {
-	uint8_t bsn;
-	struct pan_descriptor {
-		uint8_t lqi;
-	} pan_desc;
-	uint8_t sdu_len;
-};
-
-struct genl_info;
-
-int cfg802154_inform_beacon( struct ieee802154_beacon_indication *beacon_notify, struct genl_info *info );
-
 #endif /* __NL802154_H */
