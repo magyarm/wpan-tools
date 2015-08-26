@@ -345,6 +345,11 @@ static int print_active_scan_results( struct nl_msg *msg, void *arg)
 	struct nlattr *tb_msg[NL802154_ATTR_MAX + 1];
 	unsigned int *wpan_phy = arg;
 	int r;
+	int i;
+	int sdu_len;
+	size_t len;
+	const int BEACON_SDU_LEN_MAX = 127;   // FIXME magic number
+	uint8_t sdu[BEACON_SDU_LEN_MAX];
 
 	gnlh = nlmsg_data( nlmsg_hdr( msg ) );
 	if ( NULL ==  gnlh ) {
@@ -367,7 +372,7 @@ static int print_active_scan_results( struct nl_msg *msg, void *arg)
 		static struct nla_policy pan_desc_policy[NL802154_ATTR_MAX + 1] = {
 			[NL802154_ATTR_PAN_DESC_SRC_ADDR_MODE] = { .type = NLA_U8 },
 			[NL802154_ATTR_PAN_DESC_SRC_PAN_ID] = { .type = NLA_U16 },
-			[NL802154_ATTR_PAN_DESC_SRC_ADDR] = { .type = NLA_U32 },
+			[NL802154_ATTR_PAN_DESC_SRC_ADDR] = { .type = NLA_U64 },
 			[NL802154_ATTR_PAN_DESC_CHANNEL_NUM] = { .type = NLA_U8 },
 			[NL802154_ATTR_PAN_DESC_CHANNEL_PAGE] = { .type = NLA_U8 },
 			[NL802154_ATTR_PAN_DESC_SUPERFRAME_SPEC] = { .type = NLA_U8 },
@@ -398,7 +403,7 @@ static int print_active_scan_results( struct nl_msg *msg, void *arg)
 		    printf("\tsrc_pan_id: %x\n", nla_get_u16(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_PAN_ID]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR]) {
-		    printf("\tsrc_addr: %d\n", nla_get_u32(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR]));
+		    printf("\tsrc_addr: %d\n", nla_get_u64(tb_pan_desc[NL802154_ATTR_PAN_DESC_SRC_ADDR]));
 		}
 		if (tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_NUM]) {
 		    printf("\tchannel_num: %d\n", nla_get_u8(tb_pan_desc[NL802154_ATTR_PAN_DESC_CHANNEL_NUM]));
@@ -436,7 +441,38 @@ static int print_active_scan_results( struct nl_msg *msg, void *arg)
 		}
 		goto out;
 
-	} else if( tb_msg[NL802154_ATTR_SCAN_STATUS]){
+	}
+
+	if (tb_msg[NL802154_ATTR_PEND_ADDR_SPEC]) {
+		printf("pend_addr_spec: %x\n", nla_get_u8(tb_msg[NL802154_ATTR_PEND_ADDR_SPEC]));
+	}
+
+	if (tb_msg[NL802154_ATTR_SDU_LENGTH]) {
+		sdu_len = nla_get_u8(tb_msg[NL802154_ATTR_SDU_LENGTH]);
+		if( sdu_len > BEACON_SDU_LEN_MAX ) {
+			sdu_len = BEACON_SDU_LEN_MAX;
+		}
+		len = sdu_len;
+		printf("sdu_len: %d\n", sdu_len);
+	}
+	else {
+		len = 0;
+	}
+
+	if ( tb_msg[ NL802154_ATTR_SDU ] ) {
+		r = parse_nla_array_u8( tb_msg[ NL802154_ATTR_SDU ], NL802154_ATTR_SDU_ENTRY, sdu, &len );
+		if ( 0 != r ) {
+			goto protocol_error;
+		}
+
+		printf("sdu: ", sdu_len);
+		for (i = 0; i < sdu_len; i++) {
+			printf("%x ", sdu[i]);
+		}
+		printf("\n", sdu[i]);
+	}
+
+	if( tb_msg[NL802154_ATTR_SCAN_STATUS]){
 		printf( "active_scan_confirm \n");
 		printf( "\tscan_status: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_STATUS] ) );
 		printf( "\tscan_type: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_TYPE] ) );
@@ -444,8 +480,6 @@ static int print_active_scan_results( struct nl_msg *msg, void *arg)
 		printf( "\tscan_detect_category: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_DETECTED_CATEGORY] ) );
 		printf( "\tscan_result_list_size: %d\n",nla_get_u8( tb_msg[NL802154_ATTR_SCAN_RESULT_LIST_SIZE] ) );
 		goto out;
-	} else {
-		goto protocol_error;
 	}
 
 protocol_error:
